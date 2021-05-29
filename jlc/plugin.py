@@ -26,6 +26,10 @@ class JlcPlugin(pcbnew.ActionPlugin):
         self.files = [
             dict(source_extension='-drl_map.gbr',   name='Drill_Map.gbr'),
             dict(source_extension='.drl',           name='Drill.drl'),
+            # dict(source_extension='-PTH.drl',           name='PTH.drl'),
+            # dict(source_extension='-NPTH.drl',          name='NPTH.drl'),
+            # dict(source_extension='-PTH-drl_map.gbr',   name='PTH-drl_map.drl'),
+            # dict(source_extension='-NPTH-drl_map.gbr',  name='NPTH-drl_map.drl'),
         ]
         self.layers = [
             dict(suffix='F_Cu',      extension='gtl', format=pcbnew.F_Cu,      description='Top layer'),
@@ -146,13 +150,17 @@ class JlcPlugin(pcbnew.ActionPlugin):
         drill_writer.SetMapFileFormat(pcbnew.PLOT_FORMAT_GERBER)
 
         mirror = False
-        minimal_header = False
+        minimal_header = True
         offset = pcbnew.wxPoint(0,0)
         merge_npth = True
         drill_writer.SetOptions(mirror, minimal_header, offset, merge_npth)
 
+        # SetFormat(EXCELLON_WRITER self, bool aMetric, GENDRILL_WRITER_BASE::ZEROS_FMT aZerosFmt, int aLeftDigits=0, int aRightDigits=0)
         metric_format = True
-        drill_writer.SetFormat(metric_format)
+        zeros_format = pcbnew.GENDRILL_WRITER_BASE.DECIMAL_FORMAT
+        left_digits = 0
+        right_digits = 0
+        drill_writer.SetFormat(metric_format, zeros_format, left_digits, right_digits)
 
         generate_drill = True
         generate_map = True
