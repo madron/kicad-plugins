@@ -31,7 +31,7 @@ class JlcPlugin(pcbnew.ActionPlugin):
             dict(suffix='F_Cu',      extension='gtl', format=pcbnew.F_Cu,      description='Top layer'),
             dict(suffix='B_Cu',      extension='gbl', format=pcbnew.B_Cu,      description='Bottom layer'),
             dict(suffix='F_Paste',   extension='gtp', format=pcbnew.F_Paste,   description='Paste top'),
-            dict(suffix='B_Paste',   extension='gbp', format=pcbnew.B_Paste,   description='Paste Bottom'),
+            # dict(suffix='B_Paste',   extension='gbp', format=pcbnew.B_Paste,   description='Paste Bottom'),
             dict(suffix='F_SilkS',   extension='gto', format=pcbnew.F_SilkS,   description='Silk top'),
             dict(suffix='B_SilkS',   extension='gbo', format=pcbnew.B_SilkS,   description='Silk top'),
             dict(suffix='F_Mask',    extension='gts', format=pcbnew.F_Mask,    description='Mask top'),
