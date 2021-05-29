@@ -41,7 +41,7 @@ class JlcPlugin(pcbnew.ActionPlugin):
         self.drill_path = os.path.join(self.fab_dir, self.drill_name)
         self.bom_name = 'bom.csv'
         self.bom_path = os.path.join(self.jlc_dir, self.bom_name)
-        self.rotation_override_name = 'rotation-override.yml'
+        self.rotation_override_name = 'jlc-rotation-override.yml'
         self.rotation_override_path = os.path.join(self.project_dir, self.rotation_override_name)
         self.position_name = 'cpl.csv'
         self.position_path = os.path.join(self.jlc_dir, self.position_name)
@@ -133,7 +133,7 @@ class JlcPlugin(pcbnew.ActionPlugin):
         # write csv
         with open(self.bom_path, 'w', newline='') as f:
             out = csv.writer(f)
-            # out.writerow(['Comment', 'Designator', 'Footprint', 'LCSC Part #'])
+            out.writerow(['Comment', 'Designator', 'Footprint', 'LCSC Part #'])
             for group in net.groupComponents():
                 refs = []
                 lcsc_pn = ''
@@ -149,6 +149,7 @@ class JlcPlugin(pcbnew.ActionPlugin):
                 if len(refs) == 0:
                     continue
                 # Fill in the component groups common data
+                comment = ''
                 out.writerow([c.getValue() + " " + c.getDescription(), ",".join(refs), c.getFootprint().split(':')[1], lcsc_pn])
             f.close()
 
@@ -158,8 +159,8 @@ class JlcPlugin(pcbnew.ActionPlugin):
             with open(self.rotation_override_path, 'r') as stream:
                 rotation_overrides = yaml.safe_load(stream)
         with open(self.position_path, 'w', newline='') as f:
-            ordered_fieldnames = OrderedDict([('Designator',None),('Mid X',None),('Mid Y',None),('Layer',None),('Rotation',None)])
-            writer = csv.DictWriter(f, fieldnames=ordered_fieldnames)
+            fieldnames = ['Designator', 'Mid X', 'Mid Y', 'Layer', 'Rotation']
+            writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
             for module in self.board.GetModules():
                 module: pcbnew.MODULE = module
@@ -183,7 +184,6 @@ class JlcPlugin(pcbnew.ActionPlugin):
                     'Rotation': rotation,
                 })
 
-
     def Run(self):
         self.prepare()
         self.generate_gerber()
@@ -191,6 +191,7 @@ class JlcPlugin(pcbnew.ActionPlugin):
         self.generate_gerber_zipfile()
         self.generate_bom()
         self.generate_position()
+
 
 # register plugin with kicad backend
 JlcPlugin().register()
