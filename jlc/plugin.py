@@ -23,6 +23,10 @@ class JlcPlugin(pcbnew.ActionPlugin):
         self.project_name = os.path.splitext(os.path.basename(self.board.GetFileName()))[0]
         self.fab_dir = os.path.join(self.project_dir, 'fab')
         self.jlc_dir = os.path.join(self.project_dir, 'jlc')
+        self.files = [
+            dict(source_extension='-drl_map.gbr',   name='Drill_Map.gbr'),
+            dict(source_extension='.drl',           name='Drill.drl'),
+        ]
         self.layers = [
             dict(suffix='F_Cu',      extension='gtl', format=pcbnew.F_Cu,      description='Top layer'),
             dict(suffix='B_Cu',      extension='gbl', format=pcbnew.B_Cu,      description='Bottom layer'),
@@ -37,7 +41,18 @@ class JlcPlugin(pcbnew.ActionPlugin):
         for layer in self.layers:
             layer['file_name'] = '{}.{}'.format(layer['suffix'], layer['extension'])
             layer['file_path'] = os.path.join(self.fab_dir, layer['file_name'])
-        self.drill_names = ['NPTH.drl', 'PTH.drl', 'NPTH-drl_map.gbr', 'PTH-drl_map.gbr']
+            name = '{}.{}'.format(layer['suffix'], layer['extension'])
+            rename = dict(
+                source_extension='-{}'.format(name),
+                name=name,
+            )
+            self.files.append(rename)
+        for rename_file in self.files:
+            source_name = '{}{}'.format(self.project_name, rename_file['source_extension'])
+            rename_file['source_path'] = os.path.join(self.fab_dir, source_name)
+            rename_file['destination_path'] = os.path.join(self.fab_dir, rename_file['name'])
+        self.drill_names = ['NPTH.drl', 'PTH.drl', 'drl_map.gbr']
+
         self.bom_name = 'bom.csv'
         self.bom_path = os.path.join(self.jlc_dir, self.bom_name)
         self.rotation_override_name = 'jlc-rotation-override.yml'
@@ -126,10 +141,6 @@ class JlcPlugin(pcbnew.ActionPlugin):
 
         pctl.ClosePlot()
 
-        for layer in self.layers:
-            source_name = os.path.join(self.fab_dir, '{}-{}'.format(self.project_name, layer['file_name']))
-            os.rename(source_name, layer['file_path'])
-
     def generate_drill(self):
         drill_writer = pcbnew.EXCELLON_WRITER(self.board)
         drill_writer.SetMapFileFormat(pcbnew.PLOT_FORMAT_GERBER)
@@ -137,7 +148,7 @@ class JlcPlugin(pcbnew.ActionPlugin):
         mirror = False
         minimal_header = False
         offset = pcbnew.wxPoint(0,0)
-        merge_npth = False
+        merge_npth = True
         drill_writer.SetOptions(mirror, minimal_header, offset, merge_npth)
 
         metric_format = True
@@ -147,18 +158,14 @@ class JlcPlugin(pcbnew.ActionPlugin):
         generate_map = True
         drill_writer.CreateDrillandMapFilesSet(self.fab_dir, generate_drill, generate_map)
 
-        for name in self.drill_names:
-            source_path = os.path.join(self.fab_dir, '{}-{}'.format(self.project_name, name))
-            destination_path = os.path.join(self.fab_dir, name)
-            os.rename(source_path, destination_path)
+    def rename_files(self):
+        for f in self.files:
+            os.rename(f['source_path'], f['destination_path'])
 
     def generate_gerber_zipfile(self):
         gerber = ZipFile(os.path.join(self.jlc_dir, '{}.zip'.format(self.project_name)), 'w')
-        for layer in self.layers:
-            gerber.write(layer['file_path'], layer['file_name'])
-        for drill_name in self.drill_names:
-            path = os.path.join(self.fab_dir, drill_name)
-            gerber.write(path, drill_name)
+        for f in self.files:
+            gerber.write(f['destination_path'], f['name'])
         gerber.close()
 
     def generate_bom(self):
@@ -171,7 +178,7 @@ class JlcPlugin(pcbnew.ActionPlugin):
         # write csv
         with open(self.bom_path, 'w', newline='') as f:
             out = csv.writer(f)
-            out.writerow(['Comment', 'Designator', 'Footprint', 'LCSC Part #'])
+            # out.writerow(['Comment', 'Designator', 'Footprint', 'LCSC Part #'])
             for group in net.groupComponents():
                 refs = []
                 lcsc_pn = ''
@@ -226,6 +233,7 @@ class JlcPlugin(pcbnew.ActionPlugin):
         self.prepare()
         self.generate_gerber()
         self.generate_drill()
+        self.rename_files()
         self.generate_gerber_zipfile()
         self.generate_bom()
         self.generate_position()
