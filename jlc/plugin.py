@@ -24,18 +24,18 @@ class JlcPlugin(pcbnew.ActionPlugin):
         self.fab_dir = os.path.join(self.project_dir, 'fab')
         self.jlc_dir = os.path.join(self.project_dir, 'jlc')
         self.layers = [
-            dict(suffix='CuTop',        format=pcbnew.F_Cu,         description='Top layer'),
-            dict(suffix='CuBottom',     format=pcbnew.B_Cu,         description='Bottom layer'),
-            dict(suffix='PasteTop',     format=pcbnew.F_Paste,      description='Paste top'),
-            dict(suffix='PasteBottom',  format=pcbnew.B_Paste,      description='Paste Bottom'),
-            dict(suffix='SilkTop',      format=pcbnew.F_SilkS,      description='Silk top'),
-            dict(suffix='SilkBottom',   format=pcbnew.B_SilkS,      description='Silk top'),
-            dict(suffix='MaskTop',      format=pcbnew.F_Mask,       description='Mask top'),
-            dict(suffix='MaskBottom',   format=pcbnew.B_Mask,       description='Mask bottom'),
-            dict(suffix='EdgeCuts',     format=pcbnew.Edge_Cuts,    description='Edges'),
+            dict(suffix='F_Cu',      extension='gtl', format=pcbnew.F_Cu,      description='Top layer'),
+            dict(suffix='B_Cu',      extension='gbl', format=pcbnew.B_Cu,      description='Bottom layer'),
+            dict(suffix='F_Paste',   extension='gtp', format=pcbnew.F_Paste,   description='Paste top'),
+            dict(suffix='B_Paste',   extension='gbp', format=pcbnew.B_Paste,   description='Paste Bottom'),
+            dict(suffix='F_SilkS',   extension='gto', format=pcbnew.F_SilkS,   description='Silk top'),
+            dict(suffix='B_SilkS',   extension='gbo', format=pcbnew.B_SilkS,   description='Silk top'),
+            dict(suffix='F_Mask',    extension='gts', format=pcbnew.F_Mask,    description='Mask top'),
+            dict(suffix='B_Mask',    extension='gbs', format=pcbnew.B_Mask,    description='Mask bottom'),
+            dict(suffix='Edge_Cuts', extension='gm1', format=pcbnew.Edge_Cuts, description='Edges'),
         ]
         for layer in self.layers:
-            layer['file_name'] = '{}.gbr'.format(layer['suffix'])
+            layer['file_name'] = '{}.{}'.format(layer['suffix'], layer['extension'])
             layer['file_path'] = os.path.join(self.fab_dir, layer['file_name'])
         self.drill_names = ['NPTH.drl', 'PTH.drl', 'NPTH-drl_map.gbr', 'PTH-drl_map.gbr']
         self.bom_name = 'bom.csv'
@@ -61,24 +61,63 @@ class JlcPlugin(pcbnew.ActionPlugin):
         pctl: pcbnew.PLOT_CONTROLLER = pcbnew.PLOT_CONTROLLER(self.board)
         popt: pcbnew.PCB_PLOT_PARAMS = pctl.GetPlotOptions()
 
+        popt.SetFormat(pcbnew.PLOT_FORMAT_GERBER)
         popt.SetOutputDirectory(self.fab_dir)
 
+        ### General options
+        # Plot border and title block (False)
+        # ?
+        # Plot footprint values (False)
+        popt.SetPlotValue(False)
+        # Plot footprint references (True)
+        popt.SetPlotReference(True)
+        # Force plotting of invisible values/refs (False)
+        popt.SetPlotInvisibleText(False)
+        # Exclude PCB edge layer from other layers (True)
+        popt.SetExcludeEdgeLayer(True)
+        # Exclude pads from silkscreen (True)
+        popt.SetPlotPadsOnSilkLayer(False)
+        # Do not tent vias (False)
+        # ?
+        # Use auxiliary axis as origin (False)
+        popt.SetUseAuxOrigin(False)
+        #
+        # Drill Marks (None)
+        popt.SetDrillMarksType(pcbnew.PCB_PLOT_PARAMS.NO_DRILL_SHAPE)
+        # Scaling (1:1)
+        popt.SetAutoScale(False)
+        popt.SetScale(1)
+        # Plot mode (Filled)
+        popt.SetPlotMode(pcbnew.FILLED_SHAPE)
+        # Default line width (5.905512 mills)
+        # popt.SetLineWidth( int ??? )
+        # Mirrored plot (False)
+        popt.SetMirror(False)
+        # Negative plot (False)
+        popt.SetNegative(False)
+        # Check zone fills before plotting (True)
+        # ?
+
+        ### Gerber options
+        # Use Protel file extension (True)
+        popt.SetUseGerberProtelExtensions(True)
+        # Generate gerber job file (False)
+        popt.SetCreateGerberJobFile(False)
+        # Subtract soldermask from silkscreen (True)
+        popt.SetSubtractMaskFromSilk(True)
+        # Coordinate format (4.6, unit mm)
+        # ?
+        # Use extended X2 format (False)
+        popt.SetUseGerberX2format(False)
+        # Include netlist attributes (False)
+        popt.SetIncludeGerberNetlistInfo(False)
+
+        ### Other
         # Set some important plot options:
         # One cannot plot the frame references, because the board does not know
         # the frame references.
-        popt.SetPlotFrameRef(False)
-        # popt.SetSketchPadLineWidth(pcbnew.FromMM(0.1))
-
-        popt.SetAutoScale(False)
-        popt.SetScale(1)
-        popt.SetMirror(False)
-        popt.SetUseGerberAttributes(True)
-        popt.SetExcludeEdgeLayer(False);
-        popt.SetScale(1)
-        popt.SetUseAuxOrigin(True)
-
-        # This by gerbers only (also the name is truly horrid!)
-        popt.SetSubtractMaskFromSilk(False) #remove solder mask from silk to be sure there is no silk on pads
+        # popt.SetPlotFrameRef(False)
+        # popt.SetUseGerberAttributes(True)
 
         for layer in self.layers:
             pctl.SetLayer(layer['format'])
