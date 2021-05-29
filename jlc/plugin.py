@@ -37,8 +37,7 @@ class JlcPlugin(pcbnew.ActionPlugin):
         for layer in self.layers:
             layer['file_name'] = '{}.gbr'.format(layer['suffix'])
             layer['file_path'] = os.path.join(self.fab_dir, layer['file_name'])
-        self.drill_name = 'Drill.drl'
-        self.drill_path = os.path.join(self.fab_dir, self.drill_name)
+        self.drill_names = ['NPTH.drl', 'PTH.drl', 'NPTH-drl_map.gbr', 'PTH-drl_map.gbr']
         self.bom_name = 'bom.csv'
         self.bom_path = os.path.join(self.jlc_dir, self.bom_name)
         self.rotation_override_name = 'jlc-rotation-override.yml'
@@ -93,34 +92,34 @@ class JlcPlugin(pcbnew.ActionPlugin):
             os.rename(source_name, layer['file_path'])
 
     def generate_drill(self):
-        # Fabricators need drill files.
-        # sometimes a drill map file is asked (for verification purpose)
         drill_writer = pcbnew.EXCELLON_WRITER(self.board)
-        drill_writer.SetMapFileFormat(pcbnew.PLOT_FORMAT_PDF)
+        drill_writer.SetMapFileFormat(pcbnew.PLOT_FORMAT_GERBER)
 
         mirror = False
         minimal_header = False
         offset = pcbnew.wxPoint(0,0)
-        # False to generate 2 separate drill files (one for plated holes, one for non plated holes)
-        # True to generate only one drill file
-        merge_npth = True
+        merge_npth = False
         drill_writer.SetOptions(mirror, minimal_header, offset, merge_npth)
 
         metric_format = True
         drill_writer.SetFormat(metric_format)
 
         generate_drill = True
-        generate_map = False
+        generate_map = True
         drill_writer.CreateDrillandMapFilesSet(self.fab_dir, generate_drill, generate_map)
 
-        source_path = os.path.join(self.fab_dir, '{}.drl'.format(self.project_name))
-        os.rename(source_path, self.drill_path)
+        for name in self.drill_names:
+            source_path = os.path.join(self.fab_dir, '{}-{}'.format(self.project_name, name))
+            destination_path = os.path.join(self.fab_dir, name)
+            os.rename(source_path, destination_path)
 
     def generate_gerber_zipfile(self):
         gerber = ZipFile(os.path.join(self.jlc_dir, '{}.zip'.format(self.project_name)), 'w')
         for layer in self.layers:
             gerber.write(layer['file_path'], layer['file_name'])
-        gerber.write(self.drill_path, self.drill_name)
+        for drill_name in self.drill_names:
+            path = os.path.join(self.fab_dir, drill_name)
+            gerber.write(path, drill_name)
         gerber.close()
 
     def generate_bom(self):
