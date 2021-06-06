@@ -186,7 +186,7 @@ class JlcPlugin(pcbnew.ActionPlugin):
         # write csv
         with open(self.bom_path, 'w', newline='') as f:
             out = csv.writer(f)
-            # out.writerow(['Comment', 'Designator', 'Footprint', 'LCSC Part #'])
+            out.writerow(['Comment', 'Designator', 'Footprint', 'LCSC Part #'])
             for group in net.groupComponents():
                 refs = []
                 lcsc_pn = ''
