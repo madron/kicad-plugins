@@ -1,0 +1,3 @@
+[submodule "freerouting"]
+	path = freerouting
+	url = git@github.com:madron/freerouting.git
