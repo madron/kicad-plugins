@@ -95,7 +95,7 @@ class JlcPlugin(pcbnew.ActionPlugin):
         # Exclude PCB edge layer from other layers (True)
         popt.SetExcludeEdgeLayer(True)
         # Exclude pads from silkscreen (True)
-        popt.SetPlotPadsOnSilkLayer(False)
+        # popt.SetPlotPadsOnSilkLayer(False)
         # Do not tent vias (False)
         # ?
         # Use auxiliary axis as origin (False)
@@ -107,7 +107,7 @@ class JlcPlugin(pcbnew.ActionPlugin):
         popt.SetAutoScale(False)
         popt.SetScale(1)
         # Plot mode (Filled)
-        popt.SetPlotMode(pcbnew.FILLED_SHAPE)
+        # popt.SetPlotMode(pcbnew.FILLED_SHAPE)
         # Default line width (5.905512 mills)
         # popt.SetLineWidth( int ??? )
         # Mirrored plot (False)
@@ -177,6 +177,7 @@ class JlcPlugin(pcbnew.ActionPlugin):
         gerber.close()
 
     def generate_bom(self):
+        sys.path.append('/usr/share/kicad-nightly/plugins')
         sys.path.append('/usr/share/kicad/plugins')
         import kicad_netlist_reader
         # parse netlist
@@ -215,7 +216,7 @@ class JlcPlugin(pcbnew.ActionPlugin):
             fieldnames = ['Designator', 'Mid X', 'Mid Y', 'Layer', 'Rotation']
             writer = csv.DictWriter(f, fieldnames=fieldnames)
             writer.writeheader()
-            for module in self.board.GetModules():
+            for module in self.board.GetFootprints():
                 module: pcbnew.MODULE = module
                 if not module.GetLayerName() == 'F.Cu':
                     continue
